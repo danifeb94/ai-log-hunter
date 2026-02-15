@@ -1,0 +1,10 @@
+# Virtual Environment
+ai-env/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Local Logs & Reports (Opsional, agar repo bersih)
+server_logs.txt
+analysis_report.txt
