@@ -1,35 +1,17 @@
-# Python Environment
+# Environment & Python
 ai-env/
-venv/
-env/
-bin/
-lib/
-share/
-
-# Python Cache
 __pycache__/
 *.py[cod]
-*$py.class
 
-# Dokumen Sensitif (Penting!)
+# Data & Index (Penting untuk Keamanan RAG)
 docs/
-*.pptx
-*.pdf
-*.docx
-
-# Basis Pengetahuan & Memori Agent
+research/
 knowledge_base.txt
-*.log
-
-# Environment Variables & Keys
-.env
-.venv
-*.token
-
-# Local Databases
 *.faiss
 *.pkl
 
-# OS Specific
+# File Sistem & Temp
 .DS_Store
 Thumbs.db
+*.log
+.env
