@@ -1,4 +1,0 @@
-- * IP: None mentioned
-* Server: BMC-Prod-01
-* Error code: None mentioned
-* Solution step: Timeout changed to 60 seconds

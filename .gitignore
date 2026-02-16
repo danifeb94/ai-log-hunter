@@ -1,10 +1,35 @@
-# Virtual Environment
+# Python Environment
 ai-env/
+venv/
+env/
+bin/
+lib/
+share/
 
 # Python Cache
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 
-# Local Logs & Reports (Opsional, agar repo bersih)
-server_logs.txt
-analysis_report.txt
+# Dokumen Sensitif (Penting!)
+docs/
+*.pptx
+*.pdf
+*.docx
+
+# Basis Pengetahuan & Memori Agent
+knowledge_base.txt
+*.log
+
+# Environment Variables & Keys
+.env
+.venv
+*.token
+
+# Local Databases
+*.faiss
+*.pkl
+
+# OS Specific
+.DS_Store
+Thumbs.db

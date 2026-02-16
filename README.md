@@ -1,25 +1,37 @@
-# AI Log Hunter: Automated System Diagnosis Agent
+# 🚀 AI Log Hunter: Super Agent BMC
+**Asisten AI Lokal Berbasis RAG untuk Otomasi & Manajemen Pengetahuan**
 
-## 📌 Deskripsi Proyek
-AI Log Hunter adalah agen otomasi berbasis AI yang dirancang untuk membantu System Administrator dalam menganalisis file log server yang berantakan. Menggunakan model Llama 3 yang berjalan secara lokal, alat ini mampu menyaring ribuan baris log dan memberikan laporan diagnosa teknis dalam Bahasa Indonesia.
+`AI Log Hunter` adalah sistem asisten cerdas yang berevolusi dari pencari log menjadi mesin pencari pengetahuan teknis (Knowledge Management). Proyek ini dioptimalkan untuk berjalan secara lokal di **Intel NUC 14 Pro (Core Ultra 5)** menggunakan model **Llama 3** untuk menjamin keamanan data.
+
+
+
+## 🌟 Fitur Utama
+* **Multi-Format RAG (Retrieval-Augmented Generation)**: Mampu membedah dan memahami dokumen standardisasi internal dalam format `.pptx` (PowerPoint) dan `.txt`.
+* **Hybrid Search Intelligence**: Agent secara otomatis beralih ke pencarian web (DuckDuckGo) jika solusi tidak ditemukan dalam basis data dokumen lokal.
+* **Selective Persistent Memory**: AI secara mandiri mengekstrak fakta teknis penting dari percakapan dan menyimpannya ke dalam `knowledge_base.txt` untuk pembelajaran kontinu.
+* **Senior Engineer Persona**: Diprogram dengan instruksi sistem untuk bertindak sebagai **Senior Automation Engineer** yang memberikan solusi teknis dalam Bahasa Indonesia.
+* **Privacy Focused**: Seluruh proses indexing dan inferensi dilakukan 100% secara lokal, memastikan dokumen sensitif tidak pernah keluar dari infrastruktur pribadi.
 
 ## 🛠️ Tech Stack
-- **Language:** Python 3.13
-- **AI Engine:** Ollama (Local LLM)
-- **Model:** Llama 3
-- **Environment:** Intel NUC 14 Pro (Core Ultra 5 125H)
+* **LLM Engine**: [Ollama](https://ollama.com/) (Llama 3).
+* **Framework**: LangChain (Core, Classic, & Community).
+* **Vector Database**: FAISS (Facebook AI Similarity Search).
+* **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2`.
+* **Compute**: Intel NUC 14 Pro (Core Ultra 5 125H).
 
-## 🚀 Fitur Utama
-- **Noise Filtering:** Mengabaikan log INFO/DEBUG dan fokus pada error kritis.
-- **Contextual Analysis:** Memahami error spesifik seperti BMC Service Timeout dan Database Link Failure.
-- **Automated Reporting:** Menghasilkan file laporan `.txt` yang siap digunakan untuk tim operasional.
+## 📂 Struktur Proyek
+- `docs/`: Penyimpanan dokumen teknis internal (Standardisasi & Manual).
+- `super_agent_bmc.py`: Script utama yang mengintegrasikan RAG, Web Search, dan Memory.
+- `knowledge_base.txt`: Basis pengetahuan yang dibangun secara otomatis oleh AI.
+- `ai-env/`: Lingkungan virtual Python 3.13 terisolasi.
 
-## 📋 Cara Menjalankan
-1. Pastikan **Ollama** sudah terinstal dan menjalankan model Llama 3.
-2. Clone repository ini.
-3. Buat virtual environment:
-   ```bash
-   python -m venv ai-env
-   source ai-env/bin/activate  # atau .\ai-env\Scripts\activate di Windows
-4. Instal dependensi: pip install ollama
-5. Jalankan: python log_analyzer.py
+## 🚀 Cara Penggunaan
+1. Aktifkan environment: `.\ai-env\Scripts\activate`
+2. Pastikan dokumen teknis sudah ada di folder `docs/`.
+3. Jalankan agent: `python .\super_agent_bmc.py`
+
+## 📈 Roadmap
+- [x] Integrasi pembaca file PowerPoint (.pptx).
+- [x] Fitur pencarian web otomatis sebagai fallback.
+- [x] Implementasi memori teknis berkelanjutan.
+- [ ] **Next**: Implementasi Web UI menggunakan Streamlit.

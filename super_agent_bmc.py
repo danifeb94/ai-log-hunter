@@ -3,42 +3,57 @@ from langchain_ollama import OllamaLLM
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import DirectoryLoader, UnstructuredPowerPointLoader, TextLoader
-from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_classic.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
+from duckduckgo_search import DDGS 
 
-# --- CONFIGURASI & INISIALISASI ---
+# --- KONFIGURASI ---
 MODEL_NAME = "llama3"
 DOCS_PATH = "./docs"
 MEMORY_FILE = "knowledge_base.txt"
 
-print(f"--- Memulai Super Agent di Intel NUC 14 Pro... ---")
+print(f"--- Memulai Super Agent BMC (NUC 14 Pro) ---")
 
-# 1. Inisialisasi Model & Tools
+# 1. Inisialisasi Model & Custom Search
 llm = OllamaLLM(model=MODEL_NAME)
-search = DuckDuckGoSearchRun()
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-# 2. Setup RAG (Membaca Dokumen Lokal)
+def web_search_custom(query):
+    with DDGS() as ddgs:
+        results = [r['body'] for r in ddgs.text(query, max_results=3)]
+        return "\n".join(results)
+
+# 2. Setup RAG (Logika Multi-Loader yang Diperbaiki)
 if not os.path.exists(DOCS_PATH):
     os.makedirs(DOCS_PATH)
 
-print("--- Mengindeks dokumen teknis (PPTX/TXT)... ---")
-loader = DirectoryLoader(DOCS_PATH, glob="./*", loader_cls=UnstructuredPowerPointLoader) 
-docs = loader.load()
+print("--- Mengindeks dokumen teknis secara selektif... ---")
+docs = []
+
+# Loader untuk PPTX (Standardisasi BMC)
+loader_pptx = DirectoryLoader(DOCS_PATH, glob="**/*.pptx", loader_cls=UnstructuredPowerPointLoader)
+docs.extend(loader_pptx.load())
+
+# Loader untuk TXT (Catatan Teknis/Knowledge Base)
+loader_txt = DirectoryLoader(DOCS_PATH, glob="**/*.txt", loader_cls=TextLoader)
+docs.extend(loader_txt.load())
+
+
 
 if docs:
     vectorstore = FAISS.from_documents(docs, embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     
-    # Template Persona Senior Engineer & Bahasa Indonesia
-    template = """Anda adalah Senior Automation Engineer ahli BMC Atrium Orchestrator.
-    Berikan jawaban teknis yang padat dan solutif.
-    WAJIB MENJAWAB DALAM BAHASA INDONESIA.
+    template = """SISTEM: Anda adalah Senior Automation Engineer ahli BMC Atrium Orchestrator. 
+    TUGAS: Jawab pertanyaan berdasarkan KONTEKS yang diberikan.
+    ATURAN BAHASA: JAWABLAH 100% DALAM BAHASA INDONESIA. 
+    DILARANG MENJAWAB DALAM BAHASA INGGRIS meskipun konteksnya berbahasa Inggris. 
+    Terjemahkan istilah teknis jika diperlukan, atau gunakan istilah teknis yang umum di Indonesia.
+
+    KONTEKS: {context}
+    PERTANYAAN: {question}
     
-    Konteks: {context}
-    Pertanyaan: {question}
-    Jawaban:"""
+    JAWABAN (Bahasa Indonesia):"""
     
     QA_PROMPT = PromptTemplate(template=template, input_variables=["context", "question"])
     local_qa = RetrievalQA.from_chain_type(
@@ -48,44 +63,38 @@ if docs:
         chain_type_kwargs={"prompt": QA_PROMPT}
     )
 else:
-    print("⚠️ Folder docs kosong. Agent hanya akan menggunakan Web Search.")
+    print("⚠️ Tidak ada dokumen valid ditemukan.")
     local_qa = None
 
-# 3. Fungsi Memori Selektif (Menyimpan Fakta)
+# 3. Fungsi Memori & Logika Agent
 def update_memory(question, answer):
-    summary_prompt = f"Ekstrak fakta teknis singkat dari: T: {question} J: {answer}. Fakta:"
+    summary_prompt = f"Ekstrak fakta teknis singkat (max 1 kalimat) dari: T: {question} J: {answer}. Fakta:"
     fact = llm.invoke(summary_prompt).strip()
     with open(MEMORY_FILE, "a") as f:
         f.write(f"- {fact}\n")
     return fact
 
-# 4. Logika Utama Agent
 def run_agent(query):
     print(f"\nUser: {query}")
-    
-    # Langkah A: Cek Dokumen Lokal
     response = ""
+    
     if local_qa:
         res = local_qa.invoke(query)
         response = res['result']
     
-    # Langkah B: Jika jawaban lokal tidak memadai, cari di Web
     if not response or "tidak tahu" in response.lower() or "not explicitly" in response.lower():
         print("🌐 Mencari referensi tambahan di internet...")
-        web_res = search.run(query)
-        # Minta AI merangkum hasil web dalam Bahasa Indonesia
-        response = llm.invoke(f"Rangkum ini dalam Bahasa Indonesia sebagai Senior Engineer: {web_res}")
+        try:
+            web_res = web_search_custom(query)
+            response = llm.invoke(f"Rangkum hasil pencarian ini dalam Bahasa Indonesia dengan gaya Senior Engineer: {web_res}")
+        except Exception as e:
+            response = f"Maaf, ada kendala koneksi: {e}"
     
-    # Langkah C: Simpan ke Memori
     fact_saved = update_memory(query, response)
-    
     print(f"AI: {response}")
-    print(f"📌 Fakta tersimpan: {fact_saved}")
+    print(f"📌 Fakta teknis baru disimpan ke {MEMORY_FILE}")
 
 # --- EKSEKUSI ---
 if __name__ == "__main__":
-    # Contoh pertanyaan tentang dokumen Standardisasi BMC AO
     run_agent("Apa standar penamaan workflow di Telkomsel AO?")
-    
-    # Contoh pertanyaan umum teknis (Web Search)
-    run_agent("Bagaimana solusi error ORA-12154 pada Oracle 19c?")
+    run_agent("Bagaimana cara troubleshooting service automation engine yang timeout?")
