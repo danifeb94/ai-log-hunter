@@ -1,40 +1,42 @@
 import os
-from langchain_community.document_loaders import DirectoryLoader, UnstructuredPowerPointLoader, TextLoader
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_classic.chains import RetrievalQA 
 from langchain_ollama import OllamaLLM
-from langchain.chains import RetrievalQA
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import DirectoryLoader, TextLoader, UnstructuredPowerPointLoader
 
-# Pastikan folder docs ada
-if not os.path.exists('./docs'):
-    os.makedirs('./docs')
-    print("Folder './docs' dibuat. Silakan masukkan file PPTX/TXT Anda ke sana.")
+# Inisialisasi Loader untuk berbagai tipe file
+loaders = {
+    ".txt": TextLoader,
+    ".pptx": UnstructuredPowerPointLoader
+}
 
-# 1. Load Dokumen (Mendukung TXT dan PPTX)
-print("--- Mengindeks dokumen di folder 'docs' (NUC 14 Pro Power)... ---")
-loader = DirectoryLoader('./docs', glob="./*", loader_cls=TextLoader) 
-# Catatan: Unstructured akan otomatis mendeteksi .pptx jika library sudah terinstal
-docs = loader.load()
+def create_loader(file_path):
+    ext = os.path.splitext(file_path)[1]
+    if ext in loaders:
+        return loaders[ext](file_path)
+    return None
 
-if not docs:
-    print("⚠️ Tidak ada dokumen ditemukan di folder './docs'.")
-else:
-    # 2. Embedding Lokal (Ringan & Cepat di NUC)
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    vectorstore = FAISS.from_documents(docs, embeddings)
+print("--- Mengindeks dokumen di folder 'docs'... ---")
+# Load dokumen dari folder docs
+docs = []
+for file in os.listdir('./docs'):
+    loader = create_loader(os.path.join('./docs', file))
+    if loader:
+        docs.extend(loader.load())
 
-    # 3. Model Llama 3
-    llm = OllamaLLM(model="llama3")
+# Setup Vector Store & LLM
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vectorstore = FAISS.from_documents(docs, embeddings)
+llm = OllamaLLM(model="llama3")
 
-    # 4. Chain Tanya Jawab
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vectorstore.as_retriever()
-    )
+# Chain Tanya Jawab menggunakan modul Classic
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    chain_type="stuff",
+    retriever=vectorstore.as_retriever()
+)
 
-    # 5. Uji Coba Pencarian Berdasarkan File PPTX
-    query = "Apa standar penamaan workflow menurut dokumen standardisasi BMC AO?"
-    print(f"\nUser: {query}")
-    print("-" * 30)
-    print("AI: ", qa_chain.run(query))
+query = "Apa standar penamaan workflow yang dijelaskan dalam dokumen?"
+print(f"\nUser: {query}")
+print("AI: ", qa_chain.invoke(query))
